@@ -1,8 +1,10 @@
-import Vue from 'vue'
-import App from './App.vue'
-
-Vue.config.productionTip = false
-
+import Vue from 'vue';
+import App from './App.vue';
+// import router from './router';
+import 'babel-polyfill'
+// 3. 创建 router 实例，然后传 `routes` 配置
+Vue.config.productionTip = false;
 new Vue({
   render: h => h(App),
-}).$mount('#app')
+  // router
+}).$mount('#app');
