@@ -1,12 +1,13 @@
 <template>
   <div id="qiniu" class="qiniu">
-    <input @change="uploadInputchange" id="uploadFileInput" type="file" accept="image/*" multiple />
+    <input @change="uploadInputchange" id="uploadFileInput" type="file" multiple />
   </div>
 </template>
 
 <script>
 // import * as qiniu from "qiniu-js";
 import axios from "axios";
+import { eventBus } from "../main";
 export default {
   data() {
     return {
@@ -14,21 +15,29 @@ export default {
         uptoken:
           "dqW9Q7PGZKYXSxytRh2bUfT45TT4s2Ls9a6TTVZW:xZHssbPYGA7HzxydJJ4vm21qO84=:eyJkZWxldGVBZnRlckRheXMiOjEsInJldHVybkJvZHkiOiJ7XCJrZXlcIjpcIiQoa2V5KVwiLFwiaGFzaFwiOlwiJChldGFnKVwiLFwiZnNpemVcIjokKGZzaXplKSxcImJ1Y2tldFwiOlwiJChidWNrZXQpXCIsXCJuYW1lXCI6XCIkKHg6bmFtZSlcIn0iLCJzY29wZSI6InRvdXdhLWVyaW8iLCJkZWFkbGluZSI6MTU3Njk0NDYxOH0=",
         domain: "http://pyh8k7w0c.bkt.clouddn.com/"
-      }
+      },
+      fileName: [],
+      fileLength: 0
     };
   },
   mounted() {},
   methods: {
     //触发input change事件
     uploadInputchange() {
-      let file = document.getElementById("uploadFileInput").files[0]; //选择的图片文件
-      console.log("file", file);
-      if (!/\.(gif|jpg|jpeg|png|GIF|JPG|PNG)$/.test(file.name)) {
-        alert("图片类型必须是.gif,jpeg,jpg,png中的一种");
-        file = "";
-        return false;
+      let files = document.getElementById("uploadFileInput").files; //选择的图片文件
+      this.fileLength = files.length;
+      this.fileName = [];
+      for (var i in files) {
+        console.log(i, ":", files[i]);
+        if (i == "length") {
+          return false;
+        } else if (!/\.(kml|KML)$/.test(files[i].name)) {
+          alert("图片类型必须是kml文件");
+          return false;
+        } else {
+          this.uploadImgToQiniu(files[i]);
+        }
       }
-      this.uploadImgToQiniu(file);
     },
     //上传图片到七牛
     uploadImgToQiniu(file) {
@@ -36,7 +45,6 @@ export default {
       let data = new FormData();
       data.append("token", this.res.uptoken); //七牛需要的token，叫后台给，是七牛账号密码等组成的hash
       data.append("file", file);
-      //   console.log('qiniu.getUploadUrl()',qiniu.getUploadUrl());
       axiosInstance({
         method: "POST",
         url: "http://upload-z2.qiniup.com", //上传地址
@@ -50,8 +58,14 @@ export default {
         }
       })
         .then(data => {
+          console.log("data.key", data.data.key);
           document.getElementById("uploadFileInput").value = ""; //上传成功，把input的value设置为空，不然 无法两次选择同一张图片
           //上传成功...  (登录七牛账号，找到七牛给你的 URL地址) 和 data里面的key 拼接成图片下载地址
+          this.fileName.push(data.data.key);
+          console.log("fileName", this.fileName);
+          if (this.fileName.length == this.fileLength) {
+            eventBus.$emit("kmlUpload",  this.fileName);
+          }
         })
         .catch(function(err) {
           //上传失败

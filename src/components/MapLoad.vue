@@ -13,17 +13,23 @@ import KML from "ol/format/KML";
 import { Tile as TileLayer, Vector as VectorLayer } from "ol/layer";
 import BingMaps from "ol/source/BingMaps";
 import VectorSource from "ol/source/Vector";
+import { eventBus } from "../main";
 export default {
   data() {
-    return{
-      
-    }
+    return {};
+  },
+  created() {
+    eventBus.$on("kmlUpload", kml => {
+      console.log("MAP", kml);
+      this.mapLoad(kml);
+    });
   },
   mounted() {
-    this.mapLoad();
+    // this.mapLoad();
   },
   methods: {
-    mapLoad() {
+    mapLoad(kml) {
+      var layerList = [];
       var raster = new TileLayer({
         source: new BingMaps({
           imagerySet: "Aerial",
@@ -31,14 +37,19 @@ export default {
             "As1HiMj1PvLPlqc_gtM7AqZfBL8ZL3VrjaS3zIb22Uvb9WKhuJObROC-qUpa81U5"
         })
       });
-      var vector = new VectorLayer({
-        source: new VectorSource({
-          url: "http://pyh8k7w0c.bkt.clouddn.com/activity_72879791.kml",
-          format: new KML()
-        })
+      layerList.push(raster);
+      kml.forEach(element => {
+        layerList.push(new VectorLayer({
+          source: new VectorSource({
+            url: "http://pyh8k7w0c.bkt.clouddn.com/"+element,
+            format: new KML()
+          })
+        }));
+        console.log('layerList',layerList);
       });
+
       var map = new Map({
-        layers: [raster, vector],
+        layers: layerList,
         target: document.getElementById("map"),
         view: new View({
           projection: "EPSG:4326", //使用这个坐标系
